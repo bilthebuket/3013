@@ -9,7 +9,7 @@
 
 #define MAX_NUM_JOBS 30
 #define MAX_COMMAND_LEN 128
-#define SHARED_MEM_SIZE 64
+#define MAX_NUM_FINISHED_JOBS 16
 
 typedef struct Job
 {
@@ -18,7 +18,7 @@ typedef struct Job
 } Job;
 
 Job** jobs;
-int num_jobs = 0;
+int* num_jobs;
 
 int* finished_pids;
 
@@ -32,15 +32,23 @@ int main(int argc, char* argv[])
 {
 	if (argc == 1)
 	{
-		jobs = malloc(sizeof(Job*) * MAX_NUM_JOBS);
-
 		char* prompt = malloc(sizeof(char) * 4);
 		prompt[0] = '=';
 		prompt[1] = '=';
 		prompt[2] = '>';
 		prompt[3] = '\0';
 
-		finished_pids = mmap(NULL, SHARED_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		jobs = mmap(NULL, sizeof(Job*) * MAX_NUM_JOBS, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		for (int i = 0; i < MAX_NUM_JOBS; i++)
+		{
+			jobs[i] = mmap(NULL, sizeof(Job), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+			jobs[i]->name = mmap(NULL, sizeof(char) * MAX_COMMAND_LEN + 1, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		}
+
+		num_jobs = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		*num_jobs = 0;
+
+		finished_pids = mmap(NULL, sizeof(int) * MAX_NUM_FINISHED_JOBS, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		finished_pids[0] = -1;
 
 		while (1)
@@ -48,6 +56,41 @@ int main(int argc, char* argv[])
 			char* input = get_input(prompt);
 			char** args = get_args(input);
 			free(input);
+
+			for (int i = 0; finished_pids[i] != -1; i++)
+			{
+				bool found = false;
+				int j;
+				for (j = 0; j < *num_jobs; j++)
+				{
+					if (jobs[j]->pid == finished_pids[i])
+					{
+						found = true;
+						break;
+					}
+				}
+
+				if (found)
+				{
+					printf("[%d] %d Completed\n", j + 1, finished_pids[i]);
+
+					for (; j < *num_jobs - 1; j++)
+					{
+						jobs[j] = jobs[j + 1];
+					}
+					*num_jobs = *num_jobs - 1;
+
+					for (j = i; finished_pids[j] != -1; j++)
+					{
+						finished_pids[j] = finished_pids[j + 1];
+					}
+				}
+				else
+				{
+					printf("Could not find pid in jobs array\n");
+					break;
+				}
+			}
 
 			if (!strcmp(args[0], "exit"))
 			{
@@ -84,7 +127,7 @@ int main(int argc, char* argv[])
 			}
 			else if (!strcmp(args[0], "jobs"))
 			{
-				for (int i = 0; i < num_jobs; i++)
+				for (int i = 0; i < *num_jobs; i++)
 				{
 					printf("[%d] %d %s\n", i + 1, jobs[i]->pid, jobs[i]->name);
 				}
@@ -106,43 +149,6 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			for (int i = 0; finished_pids[i] != -1; i++)
-			{
-				bool found = false;
-				int j;
-				for (j = 0; j < num_jobs; j++)
-				{
-					if (jobs[j]->pid == finished_pids[i])
-					{
-						found = true;
-						break;
-					}
-				}
-
-				if (found)
-				{
-					printf("[%d] %d Completed\n", j + 1, finished_pids[i]);
-
-					free(jobs[j]);
-					for (; j < num_jobs - 1; j++)
-					{
-						jobs[j] = jobs[j + 1];
-					}
-					num_jobs--;
-
-					for (j = i; finished_pids[j] != -1; j++)
-					{
-						finished_pids[j] = finished_pids[j + 1];
-					}
-				}
-				else
-				{
-					printf("Could not find pid in jobs array\n");
-					break;
-				}
-			}
-
-
 			for (int i = 0; args[i] != NULL; i++)
 			{
 				free(args[i]);
@@ -152,13 +158,15 @@ int main(int argc, char* argv[])
 		}
 		free(prompt);
 
-		for (int i = 0; i < num_jobs; i++)
+		for (int i = 0; i < *num_jobs; i++)
 		{
-			free(jobs[i]);
+			munmap(jobs[i]->name, sizeof(char) * MAX_COMMAND_LEN + 1);
+			munmap(jobs[i], sizeof(Job));
 		}
-		free(jobs);
+		munmap(jobs, sizeof(Job*) * MAX_NUM_JOBS);
+		munmap(num_jobs, sizeof(int));
 
-		munmap(finished_pids, SHARED_MEM_SIZE);
+		munmap(finished_pids, sizeof(int) * MAX_NUM_FINISHED_JOBS);
 	}
 	else
 	{
@@ -178,6 +186,76 @@ int main(int argc, char* argv[])
 
 int execute_command(char** args, bool background)
 {
+	if (background)
+	{
+		bool* done = mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		*done = false;
+
+		int pid2 = fork();
+
+		if (pid2 < 0)
+		{
+			printf("Could not fork\n");
+			return 1;
+		}
+		else if (pid2 == 0)
+		{
+			// child
+
+			int pid = fork();
+
+			if (pid < 0)
+			{
+				printf("Could not fork\n");
+				return 1;
+			}
+			else if (pid == 0)
+			{
+				// child
+				execvp(args[0], args);
+				exit(0);
+			}
+			else
+			{
+				// parent
+
+				printf("[%d] %d\n", *num_jobs + 1, pid);
+				*done = true;
+
+				int i;
+				for (i = 0; args[0][i] != '\0'; i++)
+				{
+					jobs[*num_jobs]->name[i] = args[0][i];
+				}
+				jobs[*num_jobs]->name[i] = '\0';
+
+				jobs[*num_jobs]->pid = pid;
+
+				*num_jobs = *num_jobs + 1;	
+
+				wait(0);
+
+				for (i = 0; finished_pids[i] != -1; i++) {}
+
+				finished_pids[i] = pid;
+				finished_pids[i + 1] = -1;
+				exit(0);
+			}
+		}
+		else
+		{
+			while (!(*done))
+			{
+				usleep(10000);
+			}
+
+			munmap(done, sizeof(bool));
+
+			return 0;
+		}
+	}
+	else
+	{
 		int pid = fork();
 
 		if (pid < 0)
@@ -191,70 +269,17 @@ int execute_command(char** args, bool background)
 
 			execvp(args[0], args);
 			exit(0);
-			return 0;
 		}
 		else
 		{
 			// parent
 			
-			if (background)
-			{
-				Job* job = malloc(sizeof(Job));
-
-				int len;
-				for (len = 0; args[0][len] != '\0'; len++) {}
-				len++;
-
-				printf("[%d] %d\n", num_jobs + 1, pid);
-				char* name = malloc(sizeof(char) * len);
-
-				for (int i = 0; i < len; i++)
-				{
-					name[i] = args[0][i];
-				}
-
-				job->name = name;
-				job->pid = pid;
-
-				jobs[num_jobs] = job;
-				num_jobs++;
-
-				int pid2 = fork();
-
-				if (pid2 < 0)
-				{
-					printf("Could not fork\n");
-					return 1;
-				}
-				else if (pid2 == 0)
-				{
-					// child
-
-					int* status_ptr;
-					if (waitpid(pid, status_ptr, 0) == -1)
-					{
-						perror("waitpid");
-						return 1;
-					}
-
-					int i;
-					for (i = 0; finished_pids[i] != -1; i++) {}
-
-					finished_pids[i] = pid;
-					finished_pids[i + 1] = -1;
-					exit(0);
-				}
-				else
-				{
-					return 0;
-				}
-			}
-			else
-			{
-				wait(0);
-			}
+			int status;
+			waitpid(pid, &status, 0);
+			fflush(stdout);
 			return 0;
 		}
+	}
 }
 
 char* get_input(char* prompt)
