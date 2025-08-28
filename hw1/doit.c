@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include <sys/mman.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #define MAX_NUM_JOBS 30
 #define MAX_COMMAND_LEN 128
@@ -15,6 +17,8 @@ typedef struct Job
 {
 	int pid;
 	char* name;
+	struct rusage* usage;
+	int time;
 } Job;
 
 Job** jobs;
@@ -27,6 +31,10 @@ int execute_command(char** args, bool background);
 char* get_input(char* prompt);
 
 char** get_args(char* cmd);
+
+void check_finished_processes(void);
+
+void print_stats(struct rusage* usage, int time);
 
 int main(int argc, char* argv[])
 {
@@ -43,6 +51,7 @@ int main(int argc, char* argv[])
 		{
 			jobs[i] = mmap(NULL, sizeof(Job), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 			jobs[i]->name = mmap(NULL, sizeof(char) * MAX_COMMAND_LEN + 1, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+			jobs[i]->usage = mmap(NULL, sizeof(struct rusage), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		}
 
 		num_jobs = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
@@ -57,40 +66,7 @@ int main(int argc, char* argv[])
 			char** args = get_args(input);
 			free(input);
 
-			for (int i = 0; finished_pids[i] != -1; i++)
-			{
-				bool found = false;
-				int j;
-				for (j = 0; j < *num_jobs; j++)
-				{
-					if (jobs[j]->pid == finished_pids[i])
-					{
-						found = true;
-						break;
-					}
-				}
-
-				if (found)
-				{
-					printf("[%d] %d Completed\n", j + 1, finished_pids[i]);
-
-					for (; j < *num_jobs - 1; j++)
-					{
-						jobs[j] = jobs[j + 1];
-					}
-					*num_jobs = *num_jobs - 1;
-
-					for (j = i; finished_pids[j] != -1; j++)
-					{
-						finished_pids[j] = finished_pids[j + 1];
-					}
-				}
-				else
-				{
-					printf("Could not find pid in jobs array\n");
-					break;
-				}
-			}
+			check_finished_processes();
 
 			if (!strcmp(args[0], "exit"))
 			{
@@ -100,6 +76,13 @@ int main(int argc, char* argv[])
 				}
 
 				free(args);			
+
+				while (*num_jobs > 0)
+				{
+					check_finished_processes();
+					usleep(500000);
+				}
+
 				break;
 			}
 			else if (!strcmp(args[0], "cd"))
@@ -161,6 +144,7 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < *num_jobs; i++)
 		{
 			munmap(jobs[i]->name, sizeof(char) * MAX_COMMAND_LEN + 1);
+			munmap(jobs[i]->usage, sizeof(struct rusage));
 			munmap(jobs[i], sizeof(Job));
 		}
 		munmap(jobs, sizeof(Job*) * MAX_NUM_JOBS);
@@ -219,6 +203,9 @@ int execute_command(char** args, bool background)
 			{
 				// parent
 
+				struct timeval t0;
+				struct timeval t1;
+				gettimeofday(&t0, NULL);
 				printf("[%d] %d\n", *num_jobs + 1, pid);
 				*done = true;
 
@@ -233,7 +220,13 @@ int execute_command(char** args, bool background)
 
 				*num_jobs = *num_jobs + 1;	
 
-				wait(0);
+				int status;
+				wait4(pid, &status, 0, jobs[*num_jobs - 1]->usage);
+
+				gettimeofday(&t1, NULL);
+				jobs[*num_jobs - 1]->time = ((t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec) / 1000;
+
+				fflush(stdout);
 
 				for (i = 0; finished_pids[i] != -1; i++) {}
 
@@ -274,9 +267,18 @@ int execute_command(char** args, bool background)
 		{
 			// parent
 			
+			struct timeval t0;
+			struct timeval t1;
+			gettimeofday(&t0, NULL);
+
 			int status;
-			waitpid(pid, &status, 0);
+			struct rusage usage;
+			wait4(pid, &status, 0, &usage);
+
+			gettimeofday(&t1, NULL);
+
 			fflush(stdout);
+			print_stats(&usage, ((t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec) / 1000);
 			return 0;
 		}
 	}
@@ -322,4 +324,54 @@ char** get_args(char* cmd)
 	args[num_args] = NULL;
 
 	return args;
+}
+
+void check_finished_processes(void)
+{
+	for (int i = 0; finished_pids[i] != -1; i++)
+	{
+		bool found = false;
+		int j;
+		for (j = 0; j < *num_jobs; j++)
+		{
+			if (jobs[j]->pid == finished_pids[i])
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (found)
+		{
+			printf("[%d] %d Completed\n", j + 1, finished_pids[i]);
+			print_stats(jobs[j]->usage, jobs[j]->time);
+
+			for (; j < *num_jobs - 1; j++)
+			{
+				jobs[j] = jobs[j + 1];
+			}
+			*num_jobs = *num_jobs - 1;
+
+			for (j = i; finished_pids[j] != -1; j++)
+			{
+				finished_pids[j] = finished_pids[j + 1];
+			}
+		}
+		else
+		{
+			printf("Could not find pid [%d] in jobs array\n", finished_pids[i]);
+			break;
+		}
+	}
+}
+
+void print_stats(struct rusage* usage, int time)
+{
+	printf("User CPU Time: %dms\n", usage->ru_utime.tv_sec);
+	printf("System CPU Time: %dms\n", usage->ru_stime.tv_sec);
+	printf("Wall Time: %dms\n", time);
+	printf("Involuntary Premptions: %d\n", usage->ru_nivcsw);
+	printf("Voluntary CPU Give Ups: %d\n", usage->ru_nvcsw);
+	printf("Minor Page Faults: %d\n", usage->ru_minflt);
+	printf("Major Page Faults: %d\n", usage->ru_majflt);
 }
