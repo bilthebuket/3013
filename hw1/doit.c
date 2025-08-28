@@ -38,6 +38,8 @@ int* num_jobs;
 // note: must terminate with a -1 similar to how a string must terminate with a '\0'
 int* finished_pids;
 
+// whenever you want to modify shared memory, you must wait for this to become false, then set it to true while modifying
+// the memory, then set it back when you are finished
 bool* shared_mem_in_use;
 
 /*
