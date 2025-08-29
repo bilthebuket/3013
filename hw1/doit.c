@@ -472,11 +472,6 @@ void check_finished_processes(void)
 				jobs[j + 1] = tmp;
 			}
 			*num_jobs = *num_jobs - 1;
-
-			for (int k = 0; k < *num_jobs; k++)
-			{
-				printf("Job %d, Pid %d\n", k, jobs[k]->pid);
-			}
 		}
 		else
 		{
@@ -495,11 +490,11 @@ void check_finished_processes(void)
 
 void print_stats(struct rusage* usage, int time)
 {
-	printf("User CPU Time: %dms\n", usage->ru_utime.tv_sec);
-	printf("System CPU Time: %dms\n", usage->ru_stime.tv_sec);
+	printf("User CPU Time: %ldms\n", usage->ru_utime.tv_sec);
+	printf("System CPU Time: %ldms\n", usage->ru_stime.tv_sec);
 	printf("Wall Time: %dms\n", time);
-	printf("Involuntary Premptions: %d\n", usage->ru_nivcsw);
-	printf("Voluntary CPU Give Ups: %d\n", usage->ru_nvcsw);
-	printf("Minor Page Faults: %d\n", usage->ru_minflt);
-	printf("Major Page Faults: %d\n", usage->ru_majflt);
+	printf("Involuntary Premptions: %ld\n", usage->ru_nivcsw);
+	printf("Voluntary CPU Give Ups: %ld\n", usage->ru_nvcsw);
+	printf("Minor Page Faults: %ld\n", usage->ru_minflt);
+	printf("Major Page Faults: %ld\n", usage->ru_majflt);
 }
