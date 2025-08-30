@@ -8,6 +8,7 @@
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <signal.h>
 
 // the maximum number of background process we can run simultaneously
 #define MAX_NUM_JOBS 30
@@ -21,6 +22,8 @@ typedef struct Job
 {
 	int pid;
 
+	int job_num;
+
 	// the name of the command
 	char* name;
 
@@ -33,7 +36,12 @@ typedef struct Job
 
 // all of the following pointers are allocated on shared memory
 Job** jobs;
+
+// the number of active jobs in jobs array
 int* num_jobs;
+
+// the number that will correspond to a job. resets back to one when all background tasks finish
+int* job_number;
 
 // note: must terminate with a -1 similar to how a string must terminate with a '\0'
 int* finished_pids;
@@ -111,11 +119,18 @@ int main(int argc, char* argv[])
 		num_jobs = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		*num_jobs = 0;
 
+		job_number = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		*job_number = 1;
+
 		shared_mem_in_use = mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		*shared_mem_in_use = false;
 
 		finished_pids = mmap(NULL, sizeof(int) * MAX_NUM_FINISHED_JOBS, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		finished_pids[0] = -1;
+
+		// because our parent process does not wait for children when they are background tasks, we need the os the reap them so they 
+		// dont become zombies
+		signal(SIGCHLD, SIG_IGN);
 
 		// main loop: get input, parse the input, execute the input, repeat until "exit" command
 		while (1)
@@ -138,7 +153,7 @@ int main(int argc, char* argv[])
 				while (*num_jobs > 0)
 				{
 					check_finished_processes();
-					usleep(500000);
+					usleep(1);
 				}
 
 				break;
@@ -172,7 +187,7 @@ int main(int argc, char* argv[])
 			{
 				for (int i = 0; i < *num_jobs; i++)
 				{
-					printf("[%d] %d %s\n", i + 1, jobs[i]->pid, jobs[i]->name);
+					printf("[%d] %d %s\n", jobs[i]->job_num, jobs[i]->pid, jobs[i]->name);
 				}
 			}
 			else
@@ -185,6 +200,7 @@ int main(int argc, char* argv[])
 
 				if (!strcmp(args[last_arg_index], "&"))
 				{
+					free(args[last_arg_index]);
 					args[last_arg_index] = NULL;
 					execute_command(args, true);
 				}
@@ -211,9 +227,11 @@ int main(int argc, char* argv[])
 		}
 		munmap(jobs, sizeof(Job*) * MAX_NUM_JOBS);
 		munmap(num_jobs, sizeof(int));
+		munmap(job_number, sizeof(int));
 
 		munmap(finished_pids, sizeof(int) * MAX_NUM_FINISHED_JOBS);
 		munmap(shared_mem_in_use, sizeof(bool));
+		printf("balls");
 	}
 	else
 	{
@@ -284,7 +302,7 @@ int execute_command(char** args, bool background)
 
 				*shared_mem_in_use = true;
 
-				printf("[%d] %d\n", *num_jobs + 1, pid);
+				printf("[%d] %d\n", *job_number, pid);
 				*done = true;
 
 				int i;
@@ -295,8 +313,10 @@ int execute_command(char** args, bool background)
 				jobs[*num_jobs]->name[i] = '\0';
 
 				jobs[*num_jobs]->pid = pid;
+				jobs[*num_jobs]->job_num = *job_number;
 
 				*num_jobs = *num_jobs + 1;	
+				*job_number = *job_number + 1;
 
 				*shared_mem_in_use = false;
 
@@ -458,7 +478,7 @@ void check_finished_processes(void)
 
 		if (found)
 		{
-			printf("[%d] %d Completed\n", j + 1, finished_pids[i]);
+			printf("[%d] %d Completed\n", jobs[j]->job_num, finished_pids[i]);
 			print_stats(jobs[j]->usage, jobs[j]->time);
 
 			for (; j < *num_jobs - 1; j++)
@@ -484,6 +504,11 @@ void check_finished_processes(void)
 	// this should never be an issue given that a job is always added before its added to finished_pids, but none the less
 	// it is important to point out
 	finished_pids[0] = -1;
+
+	if (*num_jobs == 0)
+	{
+		*job_number = 1;
+	}
 
 	*shared_mem_in_use = false;
 }

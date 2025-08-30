@@ -1,39 +1,160 @@
-==7283== Memcheck, a memory error detector
-==7283== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
-==7283== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
-==7283== Command: ./doit
-==7283== 
-==7287== 
-==7287== HEAP SUMMARY:
-==7287==     in use at exit: 285 bytes in 5 blocks
-==7287==   total heap usage: 8 allocs, 3 frees, 2,462 bytes allocated
-==7287== 
-==7287== LEAK SUMMARY:
-==7287==    definitely lost: 0 bytes in 0 blocks
-==7287==    indirectly lost: 0 bytes in 0 blocks
-==7287==      possibly lost: 0 bytes in 0 blocks
-==7287==    still reachable: 285 bytes in 5 blocks
-==7287==         suppressed: 0 bytes in 0 blocks
-==7287== Reachable blocks (those to which a pointer was found) are not shown.
-==7287== To see them, rerun with: --leak-check=full --show-leak-kinds=all
-==7287== 
-==7287== For lists of detected and suppressed errors, rerun with: -s
-==7287== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-==7283== 
-==7283== HEAP SUMMARY:
-==7283==     in use at exit: 6 bytes in 1 blocks
-==7283==   total heap usage: 21 allocs, 20 frees, 3,674 bytes allocated
-==7283== 
-==7283== 6 bytes in 1 blocks are definitely lost in loss record 1 of 1
-==7283==    at 0x484E7A8: malloc (vg_replace_malloc.c:446)
-==7283==    by 0x4001394: main (doit.c:52)
-==7283== 
-==7283== LEAK SUMMARY:
-==7283==    definitely lost: 6 bytes in 1 blocks
-==7283==    indirectly lost: 0 bytes in 0 blocks
-==7283==      possibly lost: 0 bytes in 0 blocks
-==7283==    still reachable: 0 bytes in 0 blocks
-==7283==         suppressed: 0 bytes in 0 blocks
-==7283== 
-==7283== For lists of detected and suppressed errors, rerun with: -s
-==7283== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+==17679== Memcheck, a memory error detector
+==17679== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==17679== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
+==17679== Command: ./doit
+==17679== 
+==17687== 
+==17687== HEAP SUMMARY:
+==17687==     in use at exit: 278 bytes in 5 blocks
+==17687==   total heap usage: 8 allocs, 3 frees, 2,455 bytes allocated
+==17687== 
+==17687== 2 bytes in 1 blocks are definitely lost in loss record 1 of 4
+==17687==    at 0x484F7A8: malloc (vg_replace_malloc.c:446)
+==17687==    by 0x4002074: get_args (doit.c:433)
+==17687==    by 0x40014A7: main (doit.c:139)
+==17687== 
+==17687== LEAK SUMMARY:
+==17687==    definitely lost: 2 bytes in 1 blocks
+==17687==    indirectly lost: 0 bytes in 0 blocks
+==17687==      possibly lost: 0 bytes in 0 blocks
+==17687==    still reachable: 276 bytes in 4 blocks
+==17687==         suppressed: 0 bytes in 0 blocks
+==17687== Reachable blocks (those to which a pointer was found) are not shown.
+==17687== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==17687== 
+==17687== For lists of detected and suppressed errors, rerun with: -s
+==17687== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+==17679== Use of uninitialised value of size 8
+==17679==    at 0x49F2BE2: _itoa_word (_fitoa_word.c:38)
+==17679==    by 0x49FDB34: __printf_buffer (vfprintf-process-arg.c:155)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023A3: print_stats (doit.c:517)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49F2BE9: _itoa_word (_fitoa_word.c:38)
+==17679==    by 0x49FDB34: __printf_buffer (vfprintf-process-arg.c:155)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023A3: print_stats (doit.c:517)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE13A: __printf_buffer (vfprintf-process-arg.c:186)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023A3: print_stats (doit.c:517)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FEA84: __printf_buffer (vfprintf-process-arg.c:208)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023A3: print_stats (doit.c:517)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE13A: __printf_buffer (vfprintf-process-arg.c:186)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023C2: print_stats (doit.c:518)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE840: __printf_buffer (vfprintf-process-arg.c:208)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023C2: print_stats (doit.c:518)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE13A: __printf_buffer (vfprintf-process-arg.c:186)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023FD: print_stats (doit.c:520)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FEA84: __printf_buffer (vfprintf-process-arg.c:208)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x40023FD: print_stats (doit.c:520)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE13A: __printf_buffer (vfprintf-process-arg.c:186)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x400241F: print_stats (doit.c:521)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE840: __printf_buffer (vfprintf-process-arg.c:208)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x400241F: print_stats (doit.c:521)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE13A: __printf_buffer (vfprintf-process-arg.c:186)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x400243E: print_stats (doit.c:522)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE840: __printf_buffer (vfprintf-process-arg.c:208)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x400243E: print_stats (doit.c:522)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE13A: __printf_buffer (vfprintf-process-arg.c:186)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x400245D: print_stats (doit.c:523)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== Conditional jump or move depends on uninitialised value(s)
+==17679==    at 0x49FE840: __printf_buffer (vfprintf-process-arg.c:208)
+==17679==    by 0x49FFE28: __vfprintf_internal (vfprintf-internal.c:1543)
+==17679==    by 0x49F3BB2: printf (printf.c:33)
+==17679==    by 0x400245D: print_stats (doit.c:523)
+==17679==    by 0x4001F92: execute_command (doit.c:407)
+==17679==    by 0x40017E2: main (doit.c:208)
+==17679== 
+==17679== 
+==17679== HEAP SUMMARY:
+==17679==     in use at exit: 2 bytes in 1 blocks
+==17679==   total heap usage: 41 allocs, 40 frees, 6,070 bytes allocated
+==17679== 
+==17679== 2 bytes in 1 blocks are definitely lost in loss record 1 of 1
+==17679==    at 0x484F7A8: malloc (vg_replace_malloc.c:446)
+==17679==    by 0x4002074: get_args (doit.c:433)
+==17679==    by 0x40014A7: main (doit.c:139)
+==17679== 
+==17679== LEAK SUMMARY:
+==17679==    definitely lost: 2 bytes in 1 blocks
+==17679==    indirectly lost: 0 bytes in 0 blocks
+==17679==      possibly lost: 0 bytes in 0 blocks
+==17679==    still reachable: 0 bytes in 0 blocks
+==17679==         suppressed: 0 bytes in 0 blocks
+==17679== 
+==17679== Use --track-origins=yes to see where uninitialised values come from
+==17679== For lists of detected and suppressed errors, rerun with: -s
+==17679== ERROR SUMMARY: 63 errors from 15 contexts (suppressed: 0 from 0)
