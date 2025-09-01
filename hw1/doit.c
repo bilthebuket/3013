@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <signal.h>
+#include <errno.h>
 
 // the maximum number of background process we can run simultaneously
 #define MAX_NUM_JOBS 30
@@ -108,12 +109,33 @@ int main(int argc, char* argv[])
 		prompt[2] = '>';
 		prompt[3] = '\0';
 
+		bool mapped_memory_successfully = true;
+
 		jobs = mmap(NULL, sizeof(Job*) * MAX_NUM_JOBS, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+		if (jobs == NULL)
+		{
+			printf("Could not map shared memory\n");
+			return 1;
+		}
+
 		for (int i = 0; i < MAX_NUM_JOBS; i++)
 		{
 			jobs[i] = mmap(NULL, sizeof(Job), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+			if (jobs[i] == NULL)
+			{
+				mapped_memory_successfully = false;
+				continue;
+			}
+
 			jobs[i]->name = mmap(NULL, sizeof(char) * MAX_COMMAND_LEN + 1, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 			jobs[i]->usage = mmap(NULL, sizeof(struct rusage), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+			if (jobs[i]->name == NULL || jobs[i]->usage == NULL)
+			{
+				mapped_memory_successfully = false;
+			}
 		}
 
 		num_jobs = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
@@ -127,6 +149,29 @@ int main(int argc, char* argv[])
 
 		finished_pids = mmap(NULL, sizeof(int) * MAX_NUM_FINISHED_JOBS, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		finished_pids[0] = -1;
+
+		if (!mapped_memory_successfully || num_jobs == NULL || job_number == NULL || shared_mem_in_use == NULL || finished_pids == NULL)
+		{
+			printf("Could not map shared memory\n");
+
+			for (int i = 0; i < *num_jobs; i++)
+			{
+				if (jobs[i] != NULL)
+				{
+					munmap(jobs[i]->name, sizeof(char) * MAX_COMMAND_LEN + 1);
+					munmap(jobs[i]->usage, sizeof(struct rusage));
+					munmap(jobs[i], sizeof(Job));
+				}
+			}
+			munmap(jobs, sizeof(Job*) * MAX_NUM_JOBS);
+			munmap(num_jobs, sizeof(int));
+			munmap(job_number, sizeof(int));
+
+			munmap(finished_pids, sizeof(int) * MAX_NUM_FINISHED_JOBS);
+			munmap(shared_mem_in_use, sizeof(bool));
+
+			return 1;
+		}
 
 		// because our parent process does not wait for children when they are background tasks, we need the os the reap them so they 
 		// dont become zombies
@@ -160,7 +205,10 @@ int main(int argc, char* argv[])
 			}
 			else if (!strcmp(args[0], "cd"))
 			{
-				chdir(args[1]);
+				if (chdir(args[1]) == -1)
+				{
+					printf("Could not change directory\n");
+				}
 			}
 			else if (!strcmp(args[0], "set") && !strcmp(args[1], "prompt") && !strcmp(args[2], "="))
 			{
@@ -217,6 +265,7 @@ int main(int argc, char* argv[])
 
 			free(args);
 		}
+
 		free(prompt);
 
 		for (int i = 0; i < *num_jobs; i++)
@@ -231,7 +280,6 @@ int main(int argc, char* argv[])
 
 		munmap(finished_pids, sizeof(int) * MAX_NUM_FINISHED_JOBS);
 		munmap(shared_mem_in_use, sizeof(bool));
-		printf("balls");
 	}
 	else
 	{
@@ -259,6 +307,13 @@ int execute_command(char** args, bool background)
 		// the pid of the background task. we need the parent to wait until this becomes true in order to prevent the parent from printing something else
 		// before the 1st child prints that pid
 		bool* done = mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+		if (done == NULL)
+		{
+			printf("Could not map shared memory\n");
+			return 0;
+		}
+
 		*done = false;
 
 		int pid2 = fork();
@@ -281,19 +336,27 @@ int execute_command(char** args, bool background)
 			}
 			else if (pid == 0)
 			{
-				// child
+				// grand child
 				execvp(args[0], args);
+				printf("execvp() failed, command was not run\n");
 				exit(0);
 			}
 			else
 			{
-				// parent
+				// child
+
+				// turning off auto reap so we can wait for the grand child to finish in the child process
+				signal(SIGCHLD, SIG_DFL);
 
 				// getting the time for when the process starts, filling in information about the process
 				// then waiting for the process to finish, getting the time when the process finishes, and adding it to finished_pids
 				struct timeval t0;
 				struct timeval t1;
-				gettimeofday(&t0, NULL);
+				if (gettimeofday(&t0, NULL) == -1)
+				{
+					printf("first gettimeofday() failed, cannot track wall time for job [%d]\n", pid);
+					t0.tv_sec = -1;
+				}
 
 				while (*shared_mem_in_use)
 				{
@@ -323,9 +386,26 @@ int execute_command(char** args, bool background)
 				// we have now gathered all the pre execution information and added it to the jobs array so we will wait for the child
 				// to finish the actual bash execution
 				int status;
-				wait4(pid, &status, 0, jobs[*num_jobs - 1]->usage);
+				int ret;
+				do
+				{
+					ret = wait4(pid, &status, 0, jobs[*num_jobs - 1]->usage);
+				}
+				while (ret == -1 && errno == EINTR);
 
-				gettimeofday(&t1, NULL);
+				if (ret == -1)
+				{
+					if (errno == ECHILD)
+					{
+						jobs[*num_jobs - 1]->usage->ru_utime.tv_sec = -1;
+					}
+				}
+
+				if (gettimeofday(&t1, NULL) == -1)
+				{
+					printf("second gettimeofday() failed, cannot track wall time for job [%d}\n", pid);
+					t1.tv_sec = -1;
+				}
 
 				while (*shared_mem_in_use)
 				{
@@ -344,7 +424,14 @@ int execute_command(char** args, bool background)
 					}
 				}
 
-				jobs[i]->time = ((t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec) / 1000;
+				if (t0.tv_sec == -1 || t1.tv_sec == -1)
+				{
+					jobs[i]->time = -1;
+				}
+				else
+				{
+					jobs[i]->time = ((t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec) / 1000;
+				}
 
 				fflush(stdout);
 
@@ -388,24 +475,62 @@ int execute_command(char** args, bool background)
 			// child
 
 			execvp(args[0], args);
+			printf("execvp() failed, command was not run\n");
 			exit(0);
 		}
 		else
 		{
 			// parent
 			
+			// turning off auto reap so we can wait for the child (since this isnt a background process)
+			signal(SIGCHLD, SIG_DFL);
 			struct timeval t0;
 			struct timeval t1;
-			gettimeofday(&t0, NULL);
+			if (gettimeofday(&t0, NULL) == -1)
+			{
+				printf("first gettimeofday() failed, cannot track wall time for job [%d]\n", pid);
+				t0.tv_sec = -1;
+			}
 
 			int status;
+			int ret;
 			struct rusage usage;
-			wait4(pid, &status, 0, &usage);
 
-			gettimeofday(&t1, NULL);
+			do
+			{
+				ret = wait4(pid, &status, 0, &usage);
+			}
+			while (ret == -1 && errno == EINTR);
+
+			if (ret == -1)
+			{
+				if (errno == ECHILD)
+				{
+					usage.ru_utime.tv_sec = -1;
+					printf("%d\n", pid);
+				}
+			}
+
+			if (gettimeofday(&t1, NULL) == -1)
+			{
+				printf("second gettimeofday() failed, cannot track wall time for job [%d]\n", pid);
+				t1.tv_sec = -1;
+			}
 
 			fflush(stdout);
-			print_stats(&usage, ((t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec) / 1000);
+
+			if (t0.tv_sec == -1 || t1.tv_sec == -1)
+			{
+				print_stats(&usage, -1);
+			}
+			else
+			{
+				print_stats(&usage, ((t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec) / 1000);
+			}
+
+			// turning auto reap back on
+			signal(SIGCHLD, SIG_IGN);
+
 			return 1;
 		}
 	}
@@ -515,11 +640,20 @@ void check_finished_processes(void)
 
 void print_stats(struct rusage* usage, int time)
 {
-	printf("User CPU Time: %ldms\n", usage->ru_utime.tv_sec);
-	printf("System CPU Time: %ldms\n", usage->ru_stime.tv_sec);
-	printf("Wall Time: %dms\n", time);
-	printf("Involuntary Premptions: %ld\n", usage->ru_nivcsw);
-	printf("Voluntary CPU Give Ups: %ld\n", usage->ru_nvcsw);
-	printf("Minor Page Faults: %ld\n", usage->ru_minflt);
-	printf("Major Page Faults: %ld\n", usage->ru_majflt);
+	printf("-->Process Stats<--\n");
+	if (usage->ru_utime.tv_sec == -1)
+	{
+		printf("Could not collect some statistics due to an error with wait4()\n");
+		printf("Wall Time: %dms\n", time);
+	}
+	else
+	{
+		printf("User CPU Time: %ldms\n", usage->ru_utime.tv_sec);
+		printf("System CPU Time: %ldms\n", usage->ru_stime.tv_sec);
+		printf("Wall Time: %dms\n", time);
+		printf("Involuntary Premptions: %ld\n", usage->ru_nivcsw);
+		printf("Voluntary CPU Give Ups: %ld\n", usage->ru_nvcsw);
+		printf("Minor Page Faults: %ld\n", usage->ru_minflt);
+		printf("Major Page Faults: %ld\n", usage->ru_majflt);
+	}
 }
