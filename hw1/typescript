@@ -1,5 +1,141 @@
-Script started on 2025-09-01 12:07:11-04:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="255" LINES="84"]
+Script started on 2025-09-01 16:40:56-04:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="255" LINES="84"]
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw1[?2004h[philmagil@myhost hw1]$ bash run.sh
+[?2004l==>sleep 5 &
+[1] 2646
+==>sleep 5 &
+[2] 2648
+==>sleep 5 &
+[3] 2652
+==>jobs
+[1] 2646 sleep
+[2] 2648 sleep
+[3] 2652 sleep
+==>cd ..
+==>ls
+[1] 2646 Completed
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 5001ms
+Involuntary Premptions: 3
+Voluntary CPU Give Ups: 2
+Minor Page Faults: 97
+Major Page Faults: 0
+hw1
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 0ms
+Involuntary Premptions: 1
+Voluntary CPU Give Ups: 1
+Minor Page Faults: 105
+Major Page Faults: 0
+==>cd    cd hw^[1   1
+[2] 2648 Completed
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 5000ms
+Involuntary Premptions: 1
+Voluntary CPU Give Ups: 2
+Minor Page Faults: 96
+Major Page Faults: 0
+[3] 2652 Completed
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 5000ms
+Involuntary Premptions: 0
+Voluntary CPU Give Ups: 2
+Minor Page Faults: 96
+Major Page Faults: 0
+==>ls
+commands.txt  debug.sh	doit  doit.c  run.sh  typescript  valgrind.log
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 0ms
+Involuntary Premptions: 0
+Voluntary CPU Give Ups: 0
+Minor Page Faults: 105
+Major Page Faults: 0
+==>sleep 10 &
+[1] 2659
+==>sleep 10 &
+[2] 2661
+==>cat run.sh
+gcc -Wall -g -lm -o doit doit.c
+./doit
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 0ms
+Involuntary Premptions: 1
+Voluntary CPU Give Ups: 1
+Minor Page Faults: 96
+Major Page Faults: 0
+==>set prompt = prompt:
+[1] 2659 Completed
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 10001ms
+Involuntary Premptions: 1
+Voluntary CPU Give Ups: 2
+Minor Page Faults: 98
+Major Page Faults: 0
+[2] 2661 Completed
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 10000ms
+Involuntary Premptions: 0
+Voluntary CPU Give Ups: 2
+Minor Page Faults: 96
+Major Page Faults: 0
+prompt:jobs
+prompt:echo test
+test
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 0ms
+Involuntary Premptions: 1
+Voluntary CPU Give Ups: 1
+Minor Page Faults: 92
+Major Page Faults: 0
+prompt:exit
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw1[?2004h[philmagil@myhost hw1]$ ./doit sleep 1
+[?2004l-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 1000ms
+Involuntary Premptions: 0
+Voluntary CPU Give Ups: 2
+Minor Page Faults: 97
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw1[?2004h[philmagil@myhost hw1]$ ./doit echo test
+[?2004ltest
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 0ms
+Involuntary Premptions: 0
+Voluntary CPU Give Ups: 0
+Minor Page Faults: 93
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw1[?2004h[philmagil@myhost hw1]$ ./doit xca[K[K[Kcat debug.sh
+[?2004lgcc -Wall -g -lm -o doit doit.c
+gdb -x commands.txt ./doit
+-->Process Stats<--
+User CPU Time: 0ms
+System CPU Time: 0ms
+Wall Time: 13ms
+Involuntary Premptions: 1
+Voluntary CPU Give Ups: 2
+Minor Page Faults: 93
+Major Page Faults: 0
 ]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw1[?2004h[philmagil@myhost hw1]$ exit
 [?2004lexit
 
-Script done on 2025-09-01 12:07:14-04:00 [COMMAND_EXIT_CODE="0"]
+Script done on 2025-09-01 16:42:37-04:00 [COMMAND_EXIT_CODE="0"]

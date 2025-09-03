@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 		shared_mem_in_use = mmap(NULL, sizeof(bool), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		*shared_mem_in_use = false;
 
-		finished_pids = mmap(NULL, sizeof(int) * MAX_NUM_FINISHED_JOBS, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		finished_pids = mmap(NULL, sizeof(int) * MAX_NUM_FINISHED_JOBS + 1, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		finished_pids[0] = -1;
 
 		if (!mapped_memory_successfully || num_jobs == NULL || job_number == NULL || shared_mem_in_use == NULL || finished_pids == NULL)
@@ -248,9 +248,16 @@ int main(int argc, char* argv[])
 
 				if (!strcmp(args[last_arg_index], "&"))
 				{
-					free(args[last_arg_index]);
-					args[last_arg_index] = NULL;
-					execute_command(args, true);
+					if (*num_jobs == MAX_NUM_JOBS)
+					{
+						printf("Could not execute, max number of background jobs reached\n");
+					}
+					else
+					{
+						free(args[last_arg_index]);
+						args[last_arg_index] = NULL;
+						execute_command(args, true);
+					}
 				}
 				else
 				{
