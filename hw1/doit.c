@@ -655,8 +655,8 @@ void print_stats(struct rusage* usage, int time)
 	}
 	else
 	{
-		printf("User CPU Time: %ldms\n", usage->ru_utime.tv_sec);
-		printf("System CPU Time: %ldms\n", usage->ru_stime.tv_sec);
+		printf("User CPU Time: %ldms\n", (1000*usage->ru_utime.tv_sec) + (usage->ru_utime.tv_usec / 1000));
+		printf("System CPU Time: %ldms\n", (1000*usage->ru_stime.tv_sec) + (usage->ru_stime.tv_usec / 1000));
 		printf("Wall Time: %dms\n", time);
 		printf("Involuntary Premptions: %ld\n", usage->ru_nivcsw);
 		printf("Voluntary CPU Give Ups: %ld\n", usage->ru_nvcsw);
