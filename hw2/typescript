@@ -1,0 +1,97 @@
+Script started on 2025-09-11 17:58:47-04:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="255" LINES="84"]
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./proj2 bin/yay p4
+[?2004lProcess 1: ascii=1421382, upper=429801, lower=102694, digit=59888, space=12814 out of 2334636 bytes
+Process 2: ascii=1472865, upper=451619, lower=120920, digit=53705, space=14423 out of 2334636 bytes
+Process 3: ascii=2123632, upper=101901, lower=580260, digit=42518, space=31264 out of 2334636 bytes
+Process 4: ascii=1913387, upper=77314, lower=57864, digit=44674, space=12280 out of 2334636 bytes
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./proj2 bin/yay 40[K[K4096
+[?2004lascii=6931266, upper=1060635, lower=861738, digit=200785, space=70781 out of 9338544 bytes
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./doit proj2[K[K[K[K[K./proj2 bin.yay[K[K[K[K/yay p2
+[?2004lProcess 1: ascii=2894247, upper=881420, lower=223614, digit=113593, space=27237 out of 4669272 bytes
+Process 2: ascii=4037019, upper=179215, lower=638124, digit=87192, space=43544 out of 4669272 bytes
+-->Process Stats<--
+User CPU Time: 51ms
+System CPU Time: 0ms
+Wall Time: 26ms
+Involuntary Premptions: 8
+Voluntary CPU Give Ups: 5
+Minor Page Faults: 327
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./doit ./proj2 bin/yay p2[K[K32
+[?2004lascii=6931266, upper=1060635, lower=861738, digit=200785, space=70781 out of 9338544 bytes
+-->Process Stats<--
+User CPU Time: 61ms
+System CPU Time: 28ms
+Wall Time: 89ms
+Involuntary Premptions: 3
+Voluntary CPU Give Ups: 1
+Minor Page Faults: 86
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ,.[K[K./doit p[K./proj2 bin/yay
+[?2004lascii=6931266, upper=1060635, lower=861738, digit=200785, space=70781 out of 9338544 bytes
+-->Process Stats<--
+User CPU Time: 43ms
+System CPU Time: 4ms
+Wall Time: 48ms
+Involuntary Premptions: 2
+Voluntary CPU Give Ups: 1
+Minor Page Faults: 86
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./doit ./pojr2[K[K[K[Kroj2 bin/grep p4[K8
+[?2004lProcess 5: ascii=10487, upper=3552, lower=704, digit=407, space=44 out of 19750 bytes
+Process 4: ascii=11763, upper=3400, lower=972, digit=411, space=77 out of 19750 bytes
+Process 6: ascii=11275, upper=3059, lower=865, digit=401, space=51 out of 19750 bytes
+Process 1: ascii=16218, upper=1034, lower=1840, digit=420, space=39 out of 19750 bytes
+Process 2: ascii=11371, upper=3550, lower=769, digit=475, space=29 out of 19750 bytes
+Process 8: ascii=15107, upper=1046, lower=816, digit=196, space=79 out of 19750 bytes
+Process 3: ascii=10851, upper=3505, lower=825, digit=516, space=56 out of 19750 bytes
+Process 7: ascii=14694, upper=2189, lower=4711, digit=285, space=1308 out of 19750 bytes
+-->Process Stats<--
+User CPU Time: 3ms
+System CPU Time: 0ms
+Wall Time: 1ms
+Involuntary Premptions: 0
+Voluntary CPU Give Ups: 11
+Minor Page Faults: 439
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./doit ./proj2 bin/grep p8[K[Kmmap
+[?2004lascii=101766, upper=21335, lower=11502, digit=3111, space=1683 out of 158000 bytes
+-->Process Stats<--
+User CPU Time: 1ms
+System CPU Time: 0ms
+Wall Time: 1ms
+Involuntary Premptions: 1
+Voluntary CPU Give Ups: 1
+Minor Page Faults: 91
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./doit ./proj2 bin/grep mmap[C[1P[1P[1P[1P[1@y[1@a[1@y
+[?2004lascii=6931266, upper=1060635, lower=861738, digit=200785, space=70781 out of 9338544 bytes
+-->Process Stats<--
+User CPU Time: 47ms
+System CPU Time: 1ms
+Wall Time: 48ms
+Involuntary Premptions: 3
+Voluntary CPU Give Ups: 1
+Minor Page Faults: 232
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ ./doit ./proj2 bin/yay mmap[K[K[K[Kp8
+[?2004lProcess 6: ascii=1060593, upper=59514, lower=376813, digit=23956, space=8724 out of 1167318 bytes
+Process 4: ascii=741313, upper=225939, lower=72218, digit=26441, space=8054 out of 1167318 bytes
+Process 5: ascii=1063039, upper=42387, lower=203447, digit=18562, space=22540 out of 1167318 bytes
+Process 2: ascii=715664, upper=217618, lower=52993, digit=30396, space=5950 out of 1167318 bytes
+Process 3: ascii=731552, upper=225680, lower=48702, digit=27264, space=6369 out of 1167318 bytes
+Process 8: ascii=877023, upper=42631, lower=37256, digit=20019, space=5371 out of 1167318 bytes
+Process 7: ascii=1036364, upper=34683, lower=20608, digit=24655, space=6909 out of 1167318 bytes
+Process 1: ascii=705718, upper=212183, lower=49701, digit=29492, space=6864 out of 1167318 bytes
+-->Process Stats<--
+User CPU Time: 52ms
+System CPU Time: 1ms
+Wall Time: 8ms
+Involuntary Premptions: 2
+Voluntary CPU Give Ups: 10
+Minor Page Faults: 567
+Major Page Faults: 0
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw2[?2004h[philmagil@myhost hw2]$ exit
+[?2004lexit
+
+Script done on 2025-09-11 18:00:37-04:00 [COMMAND_EXIT_CODE="0"]

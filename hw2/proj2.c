@@ -12,6 +12,7 @@
 
 #define NUM_STATS 5
 
+// these are indicides in stats arrays (i.e. stats[NUM_ASCII] = the number of ascii characters read from a file)
 #define NUM_ASCII 0
 #define NUM_UPPER 1
 #define NUM_LOWER 2
@@ -22,10 +23,36 @@
 
 #define DEFAULT_CHUNK_SIZE 1024
 
+#define MAX_NUM_PROCESSES 16
+
+/*
+ * Gets the stats from an array of characters
+ * params:
+ * buf: the array of characters to retrieve the stats from
+ * bufsize: size of buf
+ * returns:
+ * array of integers that stores the retrieved stats
+*/
 int* get_stats(unsigned char* buf, int bufsize);
 
+/*
+ * Reads a file using the read() system call and gets the stats
+ * params:
+ * fd: the file descriptor of the file to read
+ * bufsize: the size of the buffer to use for read()
+ * returns:
+ * array of stats
+*/
 int* use_read(int fd, int bufsize);
 
+/*
+ * Reads a files using mmap() system call and gets the stats
+ * params:
+ * fd: the file descriptor of the file to read
+ * num_processes: the number of concurrent processes to use to read the file
+ * returns:
+ * array of stats
+*/
 int* use_mmap(int fd, int num_processes);
 
 int main(int argc, char* argv[])
@@ -57,6 +84,12 @@ int main(int argc, char* argv[])
 					printf("Could not parse the third argument\n");
 					return 1;
 				}
+				if (num_processes > MAX_NUM_PROCESSES || num_processes < 1)
+				{
+					printf("Invalid number of processes, must be >= 1 and <= 16\n");
+					close(fd);
+					return 1;
+				}
 				use_mmap(fd, num_processes);
 			}
 			else
@@ -78,6 +111,10 @@ int main(int argc, char* argv[])
 		}
 
 		close(fd);
+	}
+	else
+	{
+		printf("Not enough arguments\n");
 	}
 }
 
@@ -126,6 +163,10 @@ int* use_mmap(int fd, int num_processes)
 					incrementer = 1;
 				}
 
+				// because we aren't supposed to use shared memory to communicate between processes we have 
+				// to calculate where we are in the file for each processes, taking into account the one byte 
+				// correction that some processes might have because the size of the file is not necessary divisible 
+				// by the number of processes
 				int where_are_we = 0;
 				for (int j = 0; j < i; j++)
 				{

@@ -1,0 +1,7 @@
+bin/zegrep
+bin/zless
+bin/ziptool
+bin/zenity
+bin/yasm
+bin/yaml2obj
+bin/yay
