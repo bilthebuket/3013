@@ -11,6 +11,8 @@ typedef struct msg
 
 void init_boxes(int num_boxes);
 
+void free_boxes(int num_boxes);
+
 void SendMsg(int iTo, msg* pMsg);
 
 void RecvMsg(int iFrom, msg* pMsg);
