@@ -12,6 +12,7 @@
 #define GENDONE 4
 #define ALLDEAD 5
 #define SAMEASLAST 6
+#define ALLDEADANDSAME 7
 
 bool even_grid[MAXGRID][MAXGRID];
 bool odd_grid[MAXGRID][MAXGRID];
@@ -96,6 +97,8 @@ int main(int argc, char* argv[])
 		rows++;
 	}
 
+	fclose(f);
+
 	num_rows = rows;
 	num_columns = cols;
 
@@ -115,7 +118,7 @@ int main(int argc, char* argv[])
 		int* id = malloc(sizeof(int));
 		*id = i + 1;
 
-		if (pthread_create(*threads[i], NULL, worker_func, id) != 0)
+		if (pthread_create(&threads[i], NULL, worker_func, id) != 0)
 		{
 			printf("Error creating thread.\n");
 			return 1;
@@ -136,25 +139,25 @@ int main(int argc, char* argv[])
 		SendMsg(*id, &msg);
 	}
 
-	for (int i = 0; i < num_generations; i++)
+	int i;
+	for (i = 0; i <= num_generations; i++)
 	{
 		int num_same_as_last = 0;
 		int num_all_dead = 0;
-		int num_joined = 0;
+		int num_all_done = 0;
 		for (int j = 0; j < num_threads; j++)
 		{
 			RecvMsg(0, &msg);
 
 			if (msg.type == ALLDONE)
 			{
-				pthread_join(threads[msg.iSender - 1]);
-				num_joined++;
+				num_all_done++;
 			}
-			else if (msg.type == SAMEASLAST)
+			else if (msg.type == SAMEASLAST || msg.type == ALLDEADANDSAME)
 			{
 				num_same_as_last++;
 			}
-			else if (msg.type == ALLDEAD)
+			else if (msg.type == ALLDEAD || msg.type == ALLDEADANDSAME)
 			{
 				num_all_dead++;
 			}
@@ -162,20 +165,27 @@ int main(int argc, char* argv[])
 
 		msg.iSender = 0;
 
-		if (num_same_as_last == num_threads || num_all_dead == num_threads || num_joined > 0)
+		if (print || i == num_generations || num_same_as_last == num_threads || num_all_done == num_threads)
+		{
+			print_gen(i, i == num_generations || num_same_as_last == num_threads || num_all_done == num_threads);
+		}
+
+		if (num_same_as_last == num_threads || num_all_dead == num_threads || num_all_done == num_threads || i == num_generations)
 		{
 			msg.type = ALLDONE;
-			print_gen(i, true);
+			if (i != num_generations && num_all_dead == num_threads)
+			{
+				print_gen(i + 1, true);
+			}
 		}
 		else
 		{
 			msg.type = GO;
-			print_gen(i, false);
 		}
 
-		if (num_joined > 0)
+		if (num_all_done > 0)
 		{
-			if (num_joined != num_threads)
+			if (num_all_done != num_threads)
 			{
 				printf("Error: some threads are done but others arent.\n");
 				free_boxes(num_threads + 1);
@@ -187,11 +197,6 @@ int main(int argc, char* argv[])
 			for (int j = 0; j < num_threads; j++)
 			{
 				SendMsg(j + 1, &msg);
-
-				if (msg.type == ALLDONE)
-				{
-					pthread_join(threads[j]);
-				}
 			}
 
 			if (msg.type == ALLDONE)
@@ -199,6 +204,11 @@ int main(int argc, char* argv[])
 				break;
 			}
 		}
+	}
+
+	for (i = 0; i < num_threads; i++)
+	{
+		pthread_join(threads[i], NULL);
 	}
 
 	free_boxes(num_threads + 1);
@@ -212,8 +222,8 @@ void* worker_func(void* id)
 	int start_row;
 	int end_row;
 
-	bool[][] prev = even_grid;
-	bool[][] next = odd_grid;
+	bool (*prev)[MAXGRID] = even_grid;
+	bool (*next)[MAXGRID] = odd_grid;
 
 	start_row = msg.value1;
 	end_row = msg.value2;
@@ -221,7 +231,7 @@ void* worker_func(void* id)
 	do
 	{
 		bool same_as_last = true;
-		bool add_dead = true;
+		bool all_dead = true;
 		for (int i = start_row; i < end_row; i++)
 		{
 			for (int j = 0; j < num_columns; j++)
@@ -252,11 +262,12 @@ void* worker_func(void* id)
 					m = j;
 				}
 
-				for (; y < n; y++)
+				int store = x;
+				for (; y <= n; y++)
 				{
-					for (; x < m; x++)
+					for (x = store; x <= m; x++)
 					{
-						if (prev[y][x])
+						if (prev[y][x] && (y != i || x != j))
 						{
 							num_adj++;
 						}
@@ -302,22 +313,30 @@ void* worker_func(void* id)
 		
 		if (same_as_last)
 		{
-			msg.type = SAMEASLAST;
+			if (all_dead)
+			{
+				msg.type = ALLDEADANDSAME;
+			}
+			else
+			{
+				msg.type = SAMEASLAST;
+			}
 		}
-		if (all_dead)
+		else if (all_dead)
 		{
 			msg.type = ALLDEAD;
 		}
-		
+
 		SendMsg(0, &msg);
 		RecvMsg(*(int*) id, &msg);
+
+		bool (*temp)[MAXGRID] = prev;
+		prev = next;
+		next = temp;
 	}
 	while (msg.type == GO);
 
-	msg.iSender = *(int*) id;
-	msg.type = ALLDONE;
-
-	SendMsg(0, &msg);
+	free(id);
 }
 
 void print_gen(int gen_number, bool last)
@@ -361,5 +380,8 @@ void print_gen(int gen_number, bool last)
 		printf("\n");
 	}
 
-	printf("\n");
+	if (!last)
+	{
+		printf("\n");
+	}
 }
