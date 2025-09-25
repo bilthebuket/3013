@@ -7,6 +7,8 @@
 #define ALLDONE 2
 #define ERROR 3
 
+#define MAXTHREAD 10
+
 void* worker_func(void* id);
 
 int main(int argc, char* argv[])
@@ -23,6 +25,12 @@ int main(int argc, char* argv[])
 	if (num_threads <= 0 || val <= 0)
 	{
 		printf("Invalid argmuents passed. Both arguments should be positive integers\n");
+		return 1;
+	}
+
+	if (num_threads > MAXTHREAD)
+	{
+		printf("Number of threads cannot exceed 10.\n");
 		return 1;
 	}
 	
@@ -107,4 +115,6 @@ void* worker_func(void* id)
 	}
 
 	free(id);
+
+	return NULL;
 }

@@ -14,6 +14,8 @@
 #define SAMEASLAST 6
 #define ALLDEADANDSAME 7
 
+#define MAXTHREAD 10
+
 bool even_grid[MAXGRID][MAXGRID];
 bool odd_grid[MAXGRID][MAXGRID];
 
@@ -41,6 +43,12 @@ int main(int argc, char* argv[])
 	if (num_threads <= 0 || num_generations <= 0)
 	{
 		printf("Number of threads and number of generations must be a positive integer.\n");
+		return 1;
+	}
+
+	if (num_threads > MAXTHREAD)
+	{
+		printf("Number of threads cannot exceed 10.\n");
 		return 1;
 	}
 
@@ -101,6 +109,11 @@ int main(int argc, char* argv[])
 
 	num_rows = rows;
 	num_columns = cols;
+
+	if (num_threads > num_rows)
+	{
+		num_threads = num_rows;
+	}
 
 	pthread_t threads[num_threads];
 	msg msg;
@@ -337,6 +350,8 @@ void* worker_func(void* id)
 	while (msg.type == GO);
 
 	free(id);
+
+	return NULL;
 }
 
 void print_gen(int gen_number, bool last)
