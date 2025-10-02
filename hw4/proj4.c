@@ -12,7 +12,17 @@ typedef struct Frame
 	int page;
 	int num_calls_since_last_called;
 	int reference_bit;
+
+	// for the lfu policy, i didnt feel like refactoring all the other policies because they only needed an int to represent which page they were storing
+	Page* page_struct; 
 } Frame;
+
+typedef struct Page
+{
+	int id;
+	int num_references;
+	int num_references_this_period;
+} Page;
 
 void lru(int num_frames, int* references, bool trace);
 void fifo(int num_frames, int* references, bool trace);
@@ -362,13 +372,83 @@ void clock(int num_frames, int* references, bool trace)
 
 	while (references[i] != -1)
 	{
+		int j = 0;
+		bool found = false;
 
+		for (; j < num_frames; j++)
+		{
+			if (references[i] == frames[j]->page)
+			{
+				found = true;
+				frames[j]->reference = 1;
+				break;
+			}
+			if (frames[j]->page == -1)
+			{
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			if (j < num_frames)
+			{
+				frames[j]->page = references[i];
+				frames[j]->reference = 1;
+			}
+			else
+			{
+				for (; frames[index]->reference == 1; index++)
+				{
+					frames[index]->reference = 0;
+					if (index == num_frames - 1)
+					{
+						index = -1;
+					}
+				}
+
+				frames[index]->page = references[i];
+				frames[index]->reference = 1;
+			}
+
+			num_page_faults++;
+		}
+
+		if (trace)
+		{
+			print_trace(references[i], found, frames, num_frames);
+		}
 	}
+
+	printf("clock policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
+
+	for (int i = 0; i < num_frames; i++)
+	{
+		free(frames[i]);
+	}
+
+	free(frames);
 }
 
 void lfu(int num_frames, int* references, bool trace)
 {
+	int num_unique_pages = 0;
+	for (; references[num_unique_pages] != -1; num_unique_pages++) {}
 
+	Frame** frames = malloc(sizeof(Frame*) * num_frames);
+	Page** pages = malloc(sizeof(Page*) * num_unique_pages);
+
+	for (int i = 0; i < num_frames; i++)
+	{
+		frames[i] = malloc(sizeof(Frame));
+	}
+	for (int i = 0; i < num_unique_pages; i++)
+	{
+		pages[i] = malloc(sizeof(Page));
+	}
+
+	int i = 0;
+	int num_page_faults = 0;
 }
 
 void print_trace(int reference, bool found, Frame** frames, int num_frames)
