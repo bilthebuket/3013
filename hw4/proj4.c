@@ -21,7 +21,7 @@ typedef struct Page
 {
 	int id;
 	int num_references;
-	int num_references_this_period;
+	int num_calls_since_last_called;
 } Page;
 
 void lru(int num_frames, int* references, bool trace);
@@ -67,14 +67,14 @@ int main(int argc, char* argv[])
 	}
 	
 	char buf[500];
-	int* references = malloc(sizeof(int) * MAX_NUM_REFERENCES);
+	int* references = malloc(sizeof(int) * (MAX_NUM_REFERENCES + 1));
 	int i = 0;
 
 	while (fgets(buf, 500, f) > 0)
 	{
 		char* ptr = &buf[0];
 		int bytes_read;
-		while (ptr[0] != '\0' && sscanf(ptr, "%d%n", &references[i], &bytes_read) == 1)
+		while (i < MAX_NUM_REFERENCES && ptr[0] != '\0' && sscanf(ptr, "%d%n", &references[i], &bytes_read) == 1)
 		{
 			ptr += bytes_read;
 			i++;
@@ -131,6 +131,14 @@ void lru(int num_frames, int* references, bool trace)
 		bool found = false;
 
 		int j = 0;
+
+		for (; j < num_frames; j++)
+		{
+			frames[j]->num_calls_since_last_called++;
+		}
+
+		j = 0;
+
 		for (; j < num_frames; j++)
 		{
 			if (frames[j]->page == references[i])
@@ -143,7 +151,6 @@ void lru(int num_frames, int* references, bool trace)
 			{
 				break;
 			}
-			frames[j]->num_calls_since_last_called++;
 		}
 
 		if (!found)
@@ -418,6 +425,8 @@ void clock(int num_frames, int* references, bool trace)
 		{
 			print_trace(references[i], found, frames, num_frames);
 		}
+
+		i++;
 	}
 
 	printf("clock policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
@@ -432,23 +441,167 @@ void clock(int num_frames, int* references, bool trace)
 
 void lfu(int num_frames, int* references, bool trace)
 {
-	int num_unique_pages = 0;
-	for (; references[num_unique_pages] != -1; num_unique_pages++) {}
+	int num_unique_references = 0;
+	int unique_references[MAX_NUM_REFERENCES];
 
-	Frame** frames = malloc(sizeof(Frame*) * num_frames);
-	Page** pages = malloc(sizeof(Page*) * num_unique_pages);
+	for (int i = 0; references[i] != -1; i++)
+	{
+		bool found = false;
+
+		for (int j = 0; j < num_unique_references; j++)
+		{
+			if (unique_references[num_unique_references] == references[i])
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			unique_references[num_unique_references] = references[i];
+			num_unique_references++;
+		}
+	}
+
+	Page** frames = malloc(sizeof(Page*) * num_frames);
+	Page** pages = malloc(sizeof(Page*) * num_unique_references);
 
 	for (int i = 0; i < num_frames; i++)
 	{
-		frames[i] = malloc(sizeof(Frame));
+		frames[i] = NULL;
 	}
 	for (int i = 0; i < num_unique_pages; i++)
 	{
 		pages[i] = malloc(sizeof(Page));
+		pages[i]->id = unique_references[i];
+		pages[i]->num_references = 0;
+		pages[i]->num_calls_since_last_call = 0;
 	}
 
 	int i = 0;
 	int num_page_faults = 0;
+	int index = 0;
+
+	while (references[i] != -1)
+	{
+		int j = 0;
+		bool found = false;
+
+		for (; j < num_frames; j++)
+		{
+			frames[j]->num_calls_since_last_called++;
+		}
+
+		j = 0;
+
+		for (; j < num_frames; j++)
+		{
+			if (frames[j] == NULL)
+			{
+				break;
+			}
+			if (frames[j]->id == references[i])
+			{
+				found = true;
+				frames[j]->num_references++;
+				frames[j]->num_calls_since_last_call = 0;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			if (j < num_frames)
+			{
+				for (int k = 0; k < num_unique_pages; k++)
+				{
+					if (pages[k]->id == references[i])
+					{
+						frames[j] = pages[k];
+						frames[j]->num_calls_since_last_called = 0;
+						break;
+					}
+				}
+			}
+			else
+			{
+				int min_references = frames[0]->num_references;
+				int index;
+				j = 1;
+				for (; j < num_frames; j++)
+				{
+					if (frames[j]->num_references < min_references)
+					{
+						min_references = frames[j]->num_references;
+						index = j;
+					}
+					else if (frames[j]->num_references == min_references)
+					{
+						if (frames[j]->num_calls_since_last_called > frames[index]->num_calls_since_last_called)
+						{
+							min_references = frames[j]->num_references;
+							index = j;
+						}
+					}
+				}
+
+				for (int k = 0; k < num_unique_pages; k++)
+				{
+					if (pages[k]->id == references[i])
+					{
+						frames[index] = pages[k];
+						frames[index]->num_calls_since_last_called = 0;
+						break;
+					}
+				}
+			}
+
+			num_pages_faults++;
+		}
+
+		if (trace)
+		{
+			printf("%d ", reference);
+
+			if (found)
+			{
+				printf("- ");
+			}
+			else
+			{
+				printf("P ");
+			}
+
+			printf("Frames:");
+
+			int j;
+
+			for (j = 0; j < num_frames && frames[j] != NULL; j++)
+			{
+				printf(" %d", frames[j]->id);
+			}
+
+			for (; j < num_frames; j++)
+			{
+				printf(" -");
+			}
+
+			printf("\n");
+		}
+
+		i++;
+	}
+
+	printf("clock policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
+
+	for (int i = 0; i < num_unique_pages; i++)
+	{
+		free(pages[i]);
+	}
+
+	free(pages);
+	free(frames);
 }
 
 void print_trace(int reference, bool found, Frame** frames, int num_frames)
