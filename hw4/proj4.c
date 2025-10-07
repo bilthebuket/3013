@@ -7,16 +7,6 @@
 #define MIN_NUM_FRAMES 3
 #define MAX_NUM_FRAMES 20
 
-typedef struct Frame
-{
-	int page;
-	int num_calls_since_last_called;
-	int reference_bit;
-
-	// for the lfu policy, i didnt feel like refactoring all the other policies because they only needed an int to represent which page they were storing
-	Page* page_struct; 
-} Frame;
-
 typedef struct Page
 {
 	int id;
@@ -24,11 +14,29 @@ typedef struct Page
 	int num_calls_since_last_called;
 } Page;
 
-void lru(int num_frames, int* references, bool trace);
-void fifo(int num_frames, int* references, bool trace);
-void min(int num_frames, int* references, bool trace);
-void clock(int num_frames, int* references, bool trace);
-void lfu(int num_frames, int* references, bool trace);
+typedef struct Frame
+{
+	int page;
+	int num_calls_since_last_called;
+	int reference;
+
+	// for the lfu policy, i didnt feel like refactoring all the other policies because they only needed an int to represent which page they were storing
+	Page* page_struct; 
+} Frame;
+
+typedef struct Info
+{
+	int num_references;
+	int num_page_faults;
+} Info;
+
+Info* lru(int num_frames, int* references, bool trace);
+Info* fifo(int num_frames, int* references, bool trace);
+Info* min(int num_frames, int* references, bool trace);
+Info* clock(int num_frames, int* references, bool trace);
+Info* lfu(int num_frames, int* references, bool trace);
+
+void all(int num_frames, int* references);
 
 void print_trace(int reference, bool found, Frame** frames, int num_frames);
 
@@ -81,27 +89,43 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	fclose(f);
+
 	references[i] = -1;
 
 	if (!strcmp("lru", argv[1]))
 	{
-		lru(num_frames, references, trace);
+		Info* info = lru(num_frames, references, trace);
+		printf("lru policy with %d frames: %d page faults for %d references\n", num_frames, info->num_page_faults, info->num_references);
+		free(info);
 	}
 	else if (!strcmp("fifo", argv[1]))
 	{
-		fifo(num_frames, references, trace);
+		Info* info = fifo(num_frames, references, trace);
+		printf("fifo policy with %d frames: %d page faults for %d references\n", num_frames, info->num_page_faults, info->num_references);
+		free(info);
 	}
 	else if (!strcmp("min", argv[1]))
 	{
-		min(num_frames, references, trace);
+		Info* info = min(num_frames, references, trace);
+		printf("min policy with %d frames: %d page faults for %d references\n", num_frames, info->num_page_faults, info->num_references);
+		free(info);
 	}
 	else if (!strcmp("clock", argv[1]))
 	{
-		clock(num_frames, references, trace);
+		Info* info = clock(num_frames, references, trace);
+		printf("clock policy with %d frames: %d page faults for %d references\n", num_frames, info->num_page_faults, info->num_references);
+		free(info);
 	}
 	else if (!strcmp("lfu", argv[1]))
 	{
-		lfu(num_frames, references, trace);
+		Info* info = lfu(num_frames, references, trace);
+		printf("lfu policy with %d frames: %d page faults for %d references\n", num_frames, info->num_page_faults, info->num_references);
+		free(info);
+	}
+	else if (!strcmp("all", argv[1]))
+	{
+		all(num_frames, references);
 	}
 	else
 	{
@@ -114,7 +138,7 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void lru(int num_frames, int* references, bool trace)
+Info* lru(int num_frames, int* references, bool trace)
 {
 	Frame** frames = malloc(sizeof(Frame*) * num_frames);
 
@@ -187,7 +211,9 @@ void lru(int num_frames, int* references, bool trace)
 		i++;
 	}
 
-	printf("lru policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
+	Info* r = malloc(sizeof(Info));
+	r->num_references = i;
+	r->num_page_faults = num_page_faults;
 
 	for (int i = 0; i < num_frames; i++)
 	{
@@ -195,9 +221,11 @@ void lru(int num_frames, int* references, bool trace)
 	}
 
 	free(frames);
+
+	return r;
 }
 
-void fifo(int num_frames, int* references, bool trace)
+Info* fifo(int num_frames, int* references, bool trace)
 {
 	Frame** frames = malloc(sizeof(Frame*) * num_frames);
 
@@ -256,7 +284,9 @@ void fifo(int num_frames, int* references, bool trace)
 		i++;
 	}
 
-	printf("fifo policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
+	Info* r = malloc(sizeof(Info));
+	r->num_references = i;
+	r->num_page_faults = num_page_faults;
 
 	for (int i = 0; i < num_frames; i++)
 	{
@@ -264,9 +294,11 @@ void fifo(int num_frames, int* references, bool trace)
 	}
 
 	free(frames);
+
+	return r;
 }
 
-void min(int num_frames, int* references, bool trace)
+Info* min(int num_frames, int* references, bool trace)
 {
 	Frame** frames = malloc(sizeof(Frame*) * num_frames);
 
@@ -353,7 +385,9 @@ void min(int num_frames, int* references, bool trace)
 		i++;
 	}
 
-	printf("min policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
+	Info* r = malloc(sizeof(Info));
+	r->num_references = i;
+	r->num_page_faults = num_page_faults;
 
 	for (int i = 0; i < num_frames; i++)
 	{
@@ -361,9 +395,11 @@ void min(int num_frames, int* references, bool trace)
 	}
 
 	free(frames);
+
+	return r;
 }
 
-void clock(int num_frames, int* references, bool trace)
+Info* clock(int num_frames, int* references, bool trace)
 {
 	Frame** frames = malloc(sizeof(Frame*) * num_frames);
 
@@ -416,6 +452,12 @@ void clock(int num_frames, int* references, bool trace)
 
 				frames[index]->page = references[i];
 				frames[index]->reference = 1;
+
+				index++;
+				if (index == num_frames)
+				{
+					index = 0;
+				}
 			}
 
 			num_page_faults++;
@@ -429,7 +471,10 @@ void clock(int num_frames, int* references, bool trace)
 		i++;
 	}
 
-	printf("clock policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
+
+	Info* r = malloc(sizeof(Info));
+	r->num_references = i;
+	r->num_page_faults = num_page_faults;
 
 	for (int i = 0; i < num_frames; i++)
 	{
@@ -437,9 +482,11 @@ void clock(int num_frames, int* references, bool trace)
 	}
 
 	free(frames);
+
+	return r;
 }
 
-void lfu(int num_frames, int* references, bool trace)
+Info* lfu(int num_frames, int* references, bool trace)
 {
 	int num_unique_references = 0;
 	int unique_references[MAX_NUM_REFERENCES];
@@ -450,7 +497,7 @@ void lfu(int num_frames, int* references, bool trace)
 
 		for (int j = 0; j < num_unique_references; j++)
 		{
-			if (unique_references[num_unique_references] == references[i])
+			if (unique_references[j] == references[i])
 			{
 				found = true;
 				break;
@@ -471,12 +518,12 @@ void lfu(int num_frames, int* references, bool trace)
 	{
 		frames[i] = NULL;
 	}
-	for (int i = 0; i < num_unique_pages; i++)
+	for (int i = 0; i < num_unique_references; i++)
 	{
 		pages[i] = malloc(sizeof(Page));
 		pages[i]->id = unique_references[i];
 		pages[i]->num_references = 0;
-		pages[i]->num_calls_since_last_call = 0;
+		pages[i]->num_calls_since_last_called = 0;
 	}
 
 	int i = 0;
@@ -490,6 +537,10 @@ void lfu(int num_frames, int* references, bool trace)
 
 		for (; j < num_frames; j++)
 		{
+			if (frames[j] == NULL)
+			{
+				break;
+			}
 			frames[j]->num_calls_since_last_called++;
 		}
 
@@ -505,7 +556,7 @@ void lfu(int num_frames, int* references, bool trace)
 			{
 				found = true;
 				frames[j]->num_references++;
-				frames[j]->num_calls_since_last_call = 0;
+				frames[j]->num_calls_since_last_called = 0;
 				break;
 			}
 		}
@@ -514,7 +565,7 @@ void lfu(int num_frames, int* references, bool trace)
 		{
 			if (j < num_frames)
 			{
-				for (int k = 0; k < num_unique_pages; k++)
+				for (int k = 0; k < num_unique_references; k++)
 				{
 					if (pages[k]->id == references[i])
 					{
@@ -527,7 +578,7 @@ void lfu(int num_frames, int* references, bool trace)
 			else
 			{
 				int min_references = frames[0]->num_references;
-				int index;
+				int index = 0;
 				j = 1;
 				for (; j < num_frames; j++)
 				{
@@ -546,7 +597,7 @@ void lfu(int num_frames, int* references, bool trace)
 					}
 				}
 
-				for (int k = 0; k < num_unique_pages; k++)
+				for (int k = 0; k < num_unique_references; k++)
 				{
 					if (pages[k]->id == references[i])
 					{
@@ -557,12 +608,12 @@ void lfu(int num_frames, int* references, bool trace)
 				}
 			}
 
-			num_pages_faults++;
+			num_page_faults++;
 		}
 
 		if (trace)
 		{
-			printf("%d ", reference);
+			printf("%d ", references[i]);
 
 			if (found)
 			{
@@ -593,15 +644,52 @@ void lfu(int num_frames, int* references, bool trace)
 		i++;
 	}
 
-	printf("clock policy with %d frames: %d page faults for %d references\n", num_frames, num_page_faults, i);
+	Info* r = malloc(sizeof(Info));
+	r->num_references = i;
+	r->num_page_faults = num_page_faults;
 
-	for (int i = 0; i < num_unique_pages; i++)
+	for (int i = 0; i < num_unique_references; i++)
 	{
 		free(pages[i]);
 	}
 
 	free(pages);
 	free(frames);
+
+	return r;
+}
+
+void all(int num_frames, int* references)
+{
+	FILE* f = fopen("output.csv", "w");
+	fprintf(f, "frames,lru,fifo,min,clock,lfu\n");
+
+	for (int i = 3; i <= num_frames; i++)
+	{
+		fprintf(f, "%d,", i);
+
+		Info* info = lru(i, references, false);
+		fprintf(f, "%d,", info->num_page_faults);
+		free(info);
+
+		info = fifo(i, references, false);
+		fprintf(f, "%d,", info->num_page_faults);
+		free(info);
+
+		info = min(i, references, false);
+		fprintf(f, "%d,", info->num_page_faults);
+		free(info);
+
+		info = clock(i, references, false);
+		fprintf(f, "%d,", info->num_page_faults);
+		free(info);
+
+		info = lfu(i, references, false);
+		fprintf(f, "%d\n", info->num_page_faults);
+		free(info);
+	}
+
+	fclose(f);
 }
 
 void print_trace(int reference, bool found, Frame** frames, int num_frames)
