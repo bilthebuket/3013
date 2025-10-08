@@ -1,0 +1,92 @@
+Script started on 2025-10-07 08:46:37-04:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="255" LINES="84"]
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw4[?2004h[philmagil@myhost hw4]$ ./proj4 lru 3 strings/lru.txt trace
+[?2004l7 P Frames: 7 - -
+0 P Frames: 7 0 -
+1 P Frames: 7 0 1
+2 P Frames: 2 0 1
+0 - Frames: 2 0 1
+3 P Frames: 2 0 3
+0 - Frames: 2 0 3
+4 P Frames: 4 0 3
+2 P Frames: 4 0 2
+3 P Frames: 4 3 2
+lru policy with 3 frames: 8 page faults for 10 references
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw4[?2004h[philmagil@myhost hw4]$ ./proj4 lru 3 strings/lru.txt trace[1P[1P[1P[1@f[1@i[1@f[1@o[C[C[C[C[C[C[C[C[C[C[C[C[C[C[1P[1P[1P[1@f[1@i[1@f[1@o
+[?2004l0 P Frames: 0 - -
+1 P Frames: 0 1 -
+2 P Frames: 0 1 2
+3 P Frames: 3 1 2
+0 P Frames: 3 0 2
+1 P Frames: 3 0 1
+4 P Frames: 4 0 1
+0 - Frames: 4 0 1
+1 - Frames: 4 0 1
+2 P Frames: 4 2 1
+3 P Frames: 4 2 3
+4 - Frames: 4 2 3
+fifo policy with 3 frames: 9 page faults for 12 references
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw4[?2004h[philmagil@myhost hw4]$ ./proj4 fifo 3 strings/fifo.txt trace[C[1P[1P[1P[1P[1@m[1@i[1@n[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[1P[1P[1P[1P[1@m[1@i[1@n
+[?2004l7 P Frames: 7 - -
+0 P Frames: 7 0 -
+1 P Frames: 7 0 1
+2 P Frames: 2 0 1
+0 - Frames: 2 0 1
+3 P Frames: 2 0 3
+0 - Frames: 2 0 3
+4 P Frames: 2 4 3
+2 - Frames: 2 4 3
+3 - Frames: 2 4 3
+min policy with 3 frames: 6 page faults for 10 references
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw4[?2004h[philmagil@myhost hw4]$ ./proj4 min 3 strings/min.txt trace[C[1P[1P[1P[1@c[1@l[1@o[1@c[1@k[C[C[C[C[C[C[C[C[C[C[C[C[C[C[1P[1P[1P[1@c[1@l[1@o[1@c[1@k
+[?2004l1 P Frames: 1 - -
+2 P Frames: 1 2 -
+3 P Frames: 1 2 3
+2 - Frames: 1 2 3
+4 P Frames: 4 2 3
+1 P Frames: 4 1 3
+5 P Frames: 4 1 5
+2 P Frames: 2 1 5
+1 - Frames: 2 1 5
+2 - Frames: 2 1 5
+3 P Frames: 2 1 3
+4 P Frames: 2 4 3
+5 P Frames: 5 4 3
+clock policy with 3 frames: 10 page faults for 13 references
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw4[?2004h[philmagil@myhost hw4]$ ./proj4 clock 3 strings/clock.txt trace[1P[1P[1P[1P[1P[1@l[1@f[1@u[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[1P[1P[1P[1P[1P[1@l[1@f[1@u
+[?2004l2 P Frames: 2 - -
+3 P Frames: 2 3 -
+2 - Frames: 2 3 -
+1 P Frames: 2 3 1
+5 P Frames: 2 5 1
+2 - Frames: 2 5 1
+4 P Frames: 2 5 4
+5 - Frames: 2 5 4
+3 P Frames: 2 5 3
+2 - Frames: 2 5 3
+5 - Frames: 2 5 3
+2 - Frames: 2 5 3
+lfu policy with 3 frames: 6 page faults for 12 references
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw4[?2004h[philmagil@myhost hw4]$ ./proj4 lfu 3 strings/lfu.txt trace[C[C[1P[1P[1P[1@a[1@l[1@l[C[C[1P[1@2[1@0[C[C[C[C[C[C[C[C[C[C[C[C[C[1P[1P[1P[1@t[1@e[1@s[1@t[1@2[C[C[C[C[C[C[C[C[C[C[K[K[K[K[K[K
+[?2004lframes,lru,fifo,min,clock,lfu
+3,147,150,114,150,128
+4,142,145,99,144,127
+5,134,133,87,136,121
+6,125,131,77,129,116
+7,119,121,69,123,107
+8,109,106,61,108,98
+9,99,97,55,101,85
+10,90,93,49,88,78
+11,83,85,44,81,71
+12,68,72,40,71,59
+13,57,67,37,60,47
+14,52,59,34,54,43
+15,49,57,31,46,37
+16,42,49,28,46,34
+17,37,31,25,44,33
+18,32,31,23,30,29
+19,26,25,21,27,23
+20,20,20,20,20,20
+]0;philmagil@myhost:/drives/linux_files2/Synced Files/code/c/3013/hw4[?2004h[philmagil@myhost hw4]$ exit
+[?2004lexit
+
+Script done on 2025-10-07 08:47:58-04:00 [COMMAND_EXIT_CODE="0"]

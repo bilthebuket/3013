@@ -54,6 +54,11 @@ int main(int argc, char* argv[])
 	{
 		if (!strcmp(argv[4], "trace"))
 		{
+			if (!strcmp(argv[1], "all"))
+			{
+				printf("trace option is not valid for all policy.\n");
+				return 1;
+			}
 			trace = true;
 		}
 	}
@@ -661,35 +666,32 @@ Info* lfu(int num_frames, int* references, bool trace)
 
 void all(int num_frames, int* references)
 {
-	FILE* f = fopen("output.csv", "w");
-	fprintf(f, "frames,lru,fifo,min,clock,lfu\n");
+	printf("frames,lru,fifo,min,clock,lfu\n");
 
 	for (int i = 3; i <= num_frames; i++)
 	{
-		fprintf(f, "%d,", i);
+		printf("%d,", i);
 
 		Info* info = lru(i, references, false);
-		fprintf(f, "%d,", info->num_page_faults);
+		printf("%d,", info->num_page_faults);
 		free(info);
 
 		info = fifo(i, references, false);
-		fprintf(f, "%d,", info->num_page_faults);
+		printf("%d,", info->num_page_faults);
 		free(info);
 
 		info = min(i, references, false);
-		fprintf(f, "%d,", info->num_page_faults);
+		printf("%d,", info->num_page_faults);
 		free(info);
 
 		info = clock(i, references, false);
-		fprintf(f, "%d,", info->num_page_faults);
+		printf("%d,", info->num_page_faults);
 		free(info);
 
 		info = lfu(i, references, false);
-		fprintf(f, "%d\n", info->num_page_faults);
+		printf("%d\n", info->num_page_faults);
 		free(info);
 	}
-
-	fclose(f);
 }
 
 void print_trace(int reference, bool found, Frame** frames, int num_frames)
